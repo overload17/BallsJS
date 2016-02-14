@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Шарики с отбиванием</title>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <script>
+    var theCanvas = canvas;
+    var context = theCanvas.getContext("2d");
+    context.fillStyle = "#EEEEEEE";
+    context.fillRect(0,0,theCanvas.width, theCanvas.height);
+    theCanvas.onmouseup = canvasClick;
+
+    function canvasClick(e){
+        if(e.which === 1){
+            var x = e.clientX - theCanvas.offsetLeft;
+            var y = e.clientY - theCanvas.offsetTop;
+            if(!clickOnBall(x,y))
+            {
+                var r = Math.floor(Math.random()*(20) + 20);
+                var dx = Math.floor(Math.random()*(10) - 5);
+                var dy = Math.floor(Math.random()*(10) - 5);
+                var c = 'rgb(' + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + "," + Math.floor(Math.random() * 255) + ')';
+                balls.push(new Ball(x, y, r, dx, dy, c));
+            }
+        }
+        drawScreen();
+    }
+
+    function Ball(x, y, r, dx, dy, c){
+        this.r = r;
+        this.x = x - this.r;
+        this.y = y - this.r;
+        this.c = c;
+        this.dx = dx;
+        this.dy = dy;
+        this.nextX = this.x + this.dx;
+        this.nextY = this.y + this.dy;
+
+        this.show = function() {
+            context.fillStyle = this.c;
+            context.beginPath();
+            context.arc(this.x, this.y, this.r, 0, Math.PI * 2, true);
+            context.fill();
+        }
+
+        this.move = function(){
+            this.wallBounce();
+            this.nextX = (this.x += this.dx);
+            this.nextY = (this.y += this.dy);
+        }
+
+        this.wallBounce = function(){
+            if(this.x > theCanvas.width - this.r || this.x < this.r){
+                this.dx = - this.dx;
+            }
+            if(this.y > theCanvas.height - this.r || this.y < this.r){
+                this.dy = - this.dy;
+            }
+        }
+
+        this.explosion = function(){
+            balls.splice(balls.indexOf(this), 1);
+            if(this.r/3){
+                balls.push(new Ball(this.x+this.r, this.y, this.r/3, 3, 0, this.c));
+                balls.push(new Ball(this.x+this.r, this.y-this.r, this.r/3, 2, -2, this.c));
+                balls.push(new Ball(this.x, y-this.r, this.r/3, 0, -3, this.c));
+                balls.push(new Ball(this.x-this.r, this.y-this.r, this.r/3, -2, -2, this.c));
+                balls.push(new Ball(this.x-this.r, this.y, this.r/3, -3, 0, this.c));
+                balls.push(new Ball(this.x-this.r, this.y+this.r, this.r/3, -2, 2, this.c));
+                balls.push(new Ball(this.x, y+this.r, this.r/3, 0, 3, this.c));
+                balls.push(new Ball(this.x+this.r, this.y+this.r, this.r/3, 2, 2, this.c));
+            }
+        }
+    }
+
+    var balls = new Array();
+
+    function drawScreen(){
+        context.fillStyle = "#EEEEEE";
+        context.fillRect(0, 0, theCanvas.width, theCanvas.height);
+        for (var i = 0; i < balls.length; i++){
+            for(var j = 0; j < balls.length; j++){
+                if(i!= j && checkHit(balls[i], balls[j])){
+                    ballsCollide(balls[i], balls[j]);
+                }
+            }
+            balls[i].move();
+            balls[i].show();
+        }
+    }
+
+    function checkHit(b1, b2){
+        var d = Math.sqrt(Math.pow(b1.nextX-b2.nextX,2)+ Math.pow(b1.nextY-b2.nextY,2));
+        if(d < b1.r + b2.r){
+            return true;
+        }
+        return false;
+    }
+
+    function ballsCollide(b1, b2){
+        b1.dx *= -1;
+        b1.dy *= -1;
+    }
+
+    function clickOnBall(x, y){
+        for (var i = 0; i < balls.length; i++){
+            if(x > balls[i].x - balls[i].r && x < balls[i].x + balls[i].r &&
+                    y > balls[i].y - balls[i].r && y < balls[i].y + balls[i].r){
+                balls[i].explosion();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    window.setInterval(drawScreen, 30);
+    </script>
+</body>
+</html>
